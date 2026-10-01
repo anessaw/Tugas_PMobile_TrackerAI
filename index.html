@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f472b6" />
+  <title>Edge AI Inventory Scanner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar card">
+      <div class="brand-group">
+        <div class="brand-icon">🌷</div>
+        <div>
+          <p class="eyebrow">PROJECT AKHIR · EDGE AI</p>
+          <h1>Inventory Scanner <span>✨</span></h1>
+          <p class="subtitle">Deteksi objek real-time langsung dari browser.</p>
+        </div>
+      </div>
+
+      <div class="top-status">
+        <span id="modelStatus" class="status-pill status-neutral">Model belum dimuat</span>
+        <span id="dbStatus" class="status-pill status-neutral">DB: Mock Mode</span>
+      </div>
+    </header>
+
+    <main class="dashboard">
+      <section class="card hero-card">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">01 · LIVE SCANNER</p>
+            <h2>Camera & AI Detection</h2>
+          </div>
+          <span class="tiny-chip">COCO-SSD</span>
+        </div>
+
+        <div class="scanner-layout">
+          <div class="camera-card">
+            <div id="cameraContainer" class="camera-container">
+              <video id="video" autoplay playsinline muted></video>
+              <canvas id="canvas"></canvas>
+              <div id="overlayMsg" class="overlay-msg">
+                <div class="overlay-spinner"></div>
+                <p id="overlayText">Siapkan kamera untuk memulai.</p>
+              </div>
+            </div>
+
+            <div class="camera-toolbar">
+              <div class="camera-select-wrap">
+                <label for="facingMode">Kamera</label>
+                <select id="facingMode">
+                  <option value="environment">Belakang</option>
+                  <option value="user">Depan</option>
+                </select>
+              </div>
+
+              <div class="button-row">
+                <button id="startCameraBtn" class="btn btn-primary">📷 Start Camera</button>
+                <button id="stopCameraBtn" class="btn btn-secondary" disabled>⏹ Stop Camera</button>
+              </div>
+            </div>
+
+            <p class="helper-text">
+              Kamera browser membutuhkan <strong>HTTPS</strong> atau <strong>localhost</strong>.
+            </p>
+          </div>
+
+          <aside class="control-panel">
+            <div class="control-block">
+              <div class="control-title-row">
+                <h3>AI Controls</h3>
+                <span id="aiState" class="mini-state">OFF</span>
+              </div>
+
+              <button id="loadModelBtn" class="btn btn-outline full-width">🧠 Muat Model AI</button>
+
+              <button id="toggleAiBtn" class="btn btn-success full-width" disabled>▶ Start AI</button>
+
+              <div class="metric-grid">
+                <div class="metric-box">
+                  <span>Confidence</span>
+                  <strong id="confidenceValue">60%</strong>
+                </div>
+                <div class="metric-box">
+                  <span>Throttle</span>
+                  <strong>3 detik</strong>
+                </div>
+              </div>
+
+              <label class="range-label" for="confidenceRange">Confidence threshold</label>
+              <input id="confidenceRange" type="range" min="30" max="90" step="5" value="60" />
+              <div class="range-scale"><span>30%</span><span>60%</span><span>90%</span></div>
+            </div>
+
+            <div class="control-block">
+              <div class="control-title-row">
+                <h3>Target Objects</h3>
+                <span class="mini-state pink">7 kelas</span>
+              </div>
+              <div id="targetClasses" class="target-list"></div>
+            </div>
+
+            <div class="control-block compact">
+              <div class="control-title-row">
+                <h3>Database</h3>
+                <span class="mini-state">Dual Mode</span>
+              </div>
+
+              <div class="segmented" role="group" aria-label="Mode database">
+                <button class="segment active" data-db-mode="mock">💗 Mock</button>
+                <button class="segment" data-db-mode="firebase">☁️ Firebase</button>
+              </div>
+              <p class="helper-text small">
+                Firebase aktif bila <code>firebaseConfig</code> di <code>app.js</code> sudah diisi.
+              </p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="stats-grid">
+        <div class="stat-card card">
+          <div class="stat-icon pink-bg">🎯</div>
+          <div>
+            <span>Target terdeteksi</span>
+            <strong id="detectionCount">0</strong>
+          </div>
+        </div>
+        <div class="stat-card card">
+          <div class="stat-icon purple-bg">⚡</div>
+          <div>
+            <span>Status kamera</span>
+            <strong id="cameraStatus">OFF</strong>
+          </div>
+        </div>
+        <div class="stat-card card">
+          <div class="stat-icon yellow-bg">💾</div>
+          <div>
+            <span>Log tersimpan</span>
+            <strong id="logCount">0</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="card data-card" id="data-section">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">02 · REAL-TIME DATA</p>
+            <h2>Detection Log</h2>
+          </div>
+          <div class="header-actions">
+            <span id="logModeBadge" class="tiny-chip">MOCK</span>
+            <button id="exportBtn" class="btn btn-outline">⬇ Export CSV</button>
+            <button id="clearLogsBtn" class="btn btn-ghost">🗑 Clear Mock</button>
+          </div>
+        </div>
+
+        <div class="data-summary">
+          <p>Perubahan data akan dirender kembali otomatis saat ada log baru.</p>
+          <span id="syncIndicator" class="sync-indicator"><i></i> Menunggu data</span>
+        </div>
+
+        <div id="dataList" class="data-list">
+          <div class="empty-state">
+            <div class="empty-emoji">🌸</div>
+            <strong>Belum ada objek terdeteksi</strong>
+            <span>Start Camera → Muat Model → Start AI</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card info-card">
+        <div class="info-header">
+          <span class="info-icon">💡</span>
+          <div>
+            <p class="section-kicker">03 · ALUR APLIKASI</p>
+            <h2>Sesuai modul dosen</h2>
+          </div>
+        </div>
+        <div class="flow-grid">
+          <div><span>1</span><p>Firebase / Mock DB</p></div>
+          <div><span>2</span><p>Kamera getUserMedia</p></div>
+          <div><span>3</span><p>COCO-SSD Detection</p></div>
+          <div><span>4</span><p>Bounding Box Canvas</p></div>
+          <div><span>5</span><p>Throttle 3 detik</p></div>
+          <div><span>6</span><p>onSnapshot / Local Listener</p></div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Made for practical assignment · Edge AI Inventory Scanner 🌷</p>
+    </footer>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
